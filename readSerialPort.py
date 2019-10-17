@@ -4,13 +4,13 @@ from datetime import datetime
 import sparkiStats
 
 useBluetooth = False
-isIBMMacBook = False
+isIBMMacBook = True
 
 outputFile   = "sparkiLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 
 if useBluetooth == False:
   if isIBMMacBook:
-    ser = serial.Serial(port='/dev/cu.usbmodem14601', baudrate=9600)
+    ser = serial.Serial(port='/dev/cu.usbmodem14601', baudrate=19200)
   else:
     ser = serial.Serial(port='/dev/cu.usbmodem1411', baudrate=9600)
 
@@ -23,10 +23,13 @@ sensorList = {}
 
 fileHandle = open(outputFile,"at") # Append and text file
 currTime   = time.time() - startTime
+leaveLoop  = False
 
-while (currTime) < runTime:
+while ((currTime) < runTime) and (leaveLoop == False):
   try:
     stringFromSparki = ser.readline().decode('ascii').strip()  
+    if stringFromSparki == "DONE":
+      leaveLoop = True
     fileHandle.write(stringFromSparki + "\n")
     print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
     
