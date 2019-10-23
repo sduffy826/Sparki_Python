@@ -4,7 +4,7 @@ from datetime import datetime
 import sparkiStats
 
 useBluetooth = False
-isIBMMacBook = True
+isIBMMacBook = False
 
 outputFile   = "sparkiLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 
@@ -15,7 +15,7 @@ if useBluetooth == False:
     ser = serial.Serial(port='/dev/cu.usbmodem1411', baudrate=9600)
 
 readLines = 0
-runTime   = 30          # Only runs for 2 minutes
+runTime   = 60          # Only runs for 2 minutes
 startTime = time.time()  # Returns time in seconds since epoch
 ser.write(b'Trigger')    # Push something on the serial port, this will activate it
 
