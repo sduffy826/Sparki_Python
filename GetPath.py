@@ -3,7 +3,7 @@ import math
 
 show_animation = True
 
-class Dijkstra:
+class DijkstraPathPlanning:
 
     def __init__(self, obstacleXPositions, obstacleYPositions, gridResolution, robotRadius):
       """

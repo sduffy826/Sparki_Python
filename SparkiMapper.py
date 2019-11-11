@@ -23,7 +23,7 @@ It returns
   xGridSize is the number of x grid locations in the world
   yGridSize is the grid size for the y axis
 """
-def calc_grid_map_config(startValuesForX, startValuesForY, endValuesForX, endValuesForY, xyResolution):
+def getGridMapConfig(startValuesForX, startValuesForY, endValuesForX, endValuesForY, xyResolution):
   """
   Calculates the min, max values for the arrays (that's the math.min(npArray1.min(),nparray2.min())
   """
@@ -48,7 +48,7 @@ have the starting x position, starting y position, angles and
 distance traveled.
 This is really for testing
 """
-def file_read(inputFile):
+def initFromFile(inputFile):
   inputData    = [line.strip().split(",") for line in open(inputFile)]
   np_startXpos = []
   np_startYpos = []
@@ -73,8 +73,8 @@ def file_read(inputFile):
 """
 Fill the grid map with values
 """
-def fill_grid_map(startValuesForX, startValuesForY, endValuesForX, endValuesForY, xyResolution):
-  minX, minY, maxX, maxY, xGridSize, yGridSize = calc_grid_map_config(startValuesForX, startValuesForY, endValuesForX, endValuesForY, xyResolution)
+def fillGridMap(startValuesForX, startValuesForY, endValuesForX, endValuesForY, xyResolution):
+  minX, minY, maxX, maxY, xGridSize, yGridSize = getGridMapConfig(startValuesForX, startValuesForY, endValuesForX, endValuesForY, xyResolution)
 
   pointMap = np.ones((xGridSize,yGridSize))/2.0  # Give everything default value of .5 (not reviewed)
   # Get a zip with start and ending values (x1, y1, x2, y2)
@@ -83,14 +83,14 @@ def fill_grid_map(startValuesForX, startValuesForY, endValuesForX, endValuesForY
     x1, y1, x2, y2 = startingEndingTuple # Get values out of tuple
 
     if DEBUGIT:
-      print("In fill_grid_map  world line:({0},{1})->*({2},{3})".format(x1,y1,x2,y2))
+      print("In fillGridMap  world line:({0},{1})->*({2},{3})".format(x1,y1,x2,y2))
 
     # Convert values to values to grid values
     x1, y1 = mapXYToGrid(x1, y1, minX, minY, xyResolution)
     x2, y2 = mapXYToGrid(x2, y2, minX, minY, xyResolution)
 
     if DEBUGIT:
-      print("In fill_grid_map  grid line:({0},{1})->*({2},{3})".format(x1,y1,x2,y2))
+      print("In fillGridMap  grid line:({0},{1})->*({2},{3})".format(x1,y1,x2,y2))
 
 
     # Get all the points that make up the line from (x1,y1)->(x2,y2)
@@ -101,10 +101,10 @@ def fill_grid_map(startValuesForX, startValuesForY, endValuesForX, endValuesForY
       pointMap[aPointOnLine[0]][aPointOnLine[1]] = 0.0  # Mark this point as free
     # Mark the ending points as 1.0 (we extend it a little 2 cells either side), the
     # routine below is a little helper to do that
-    fill_grid_map_helper(pointMap, aPointOnLine[0], aPointOnLine[1], -1, 1, 1.0)
+    fillGridMapHelper(pointMap, aPointOnLine[0], aPointOnLine[1], -1, 1, 1.0)
   return pointMap, minX, minY, maxX, maxY
 
-def fill_grid_map_helper(pointMapToUpdate, xPos, yPos, rangeLow, rangeHigh, value2Use):
+def fillGridMapHelper(pointMapToUpdate, xPos, yPos, rangeLow, rangeHigh, value2Use):
   for xOffset in range(rangeLow,rangeHigh+1):
     for yOffset in range(rangeLow,rangeHigh+1):
       pointMapToUpdate[xPos+xOffset][yPos+yOffset] = value2Use
@@ -134,8 +134,7 @@ def mapXYToGrid(xValue, yValue, minX, minY, xyResolution):
 Return an array that contains a tuple for each point between the starting
 position and the ending position.  This uses the Bresenham's line drawing 
 algorithm
-You pass a tuple that has the starting position x1, y1 and ending
-position x2, y2
+Input args: the starting position x1, y1 and ending position x2, y2 
 """
 def returnAllPointsBetweenTwoPoints(x1, y1, x2, y2):
   deltaX = x2 - x1
@@ -181,7 +180,7 @@ def main():
   
   xyResolutionToUse = 1.0  # 2 grid points per x/y value
   
-  startXPosArray, startYPosArray, anglesArray, distancesArray = file_read("xPosYPosAngleDistance.csv")
+  startXPosArray, startYPosArray, anglesArray, distancesArray = initFromFile("xPosYPosAngleDistance.csv")
   print("length of startXPosArray: {0}".format(len(startYPosArray)))
 
   # Convert angles in degrees to radians
@@ -196,7 +195,7 @@ def main():
     print("Starting point ({0:.2f},{1:.2f}) angle: {2} distance: {3:.2f}".format(startXPosArray[i],startYPosArray[i],anglesArray[i],distancesArray[i]))
     print("     end point ({0:.2f},{1:.2f})".format(endXPosArray[i],endYPosArray[i]))
     
-  pointMap, minX, minY, maxX, maxY = fill_grid_map(startXPosArray, startYPosArray, endXPosArray, endYPosArray, xyResolutionToUse)
+  pointMap, minX, minY, maxX, maxY = fillGridMap(startXPosArray, startYPosArray, endXPosArray, endYPosArray, xyResolutionToUse)
 
   # Get the number of rows and columns in the point array
   xyres = np.array(pointMap).shape

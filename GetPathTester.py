@@ -51,7 +51,7 @@ def main():
         plt.grid(True)
         plt.axis("equal")
 
-    dijkstra = SparkiPath.Dijkstra(ox, oy, grid_size, robot_radius)
+    dijkstra = SparkiPath.DijkstraPathPlanning(ox, oy, grid_size, robot_radius)
     rx, ry = dijkstra.getPath(sx, sy, gx, gy)
     print("Path len: {0}".format(len(ry)))
     print("rx is: ")
