@@ -11,7 +11,7 @@ Mainline
 """
 def main():
   print(__file__, "start")
-  gridPointsPerXYValue = 2.0
+  gridPointsPerXYValue = 1.0
   fileWithPointsAnglesDistances = "xPosYPosAngleDistance.csv"
 
   mapperObj = MapWorldClass.MapWorld((1.0/gridPointsPerXYValue))
@@ -20,5 +20,4 @@ def main():
 
         
 if __name__ == '__main__':
-    #seanTest(-4,12, -2, -1)
-    main()       
+  main()       

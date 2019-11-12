@@ -1,11 +1,9 @@
 import matplotlib.pyplot as plt
 import math
 
-show_animation = True
-
 class DijkstraPathPlanning:
 
-    def __init__(self, obstacleXPositions, obstacleYPositions, gridResolution, robotRadius):
+    def __init__(self, obstacleXPositions, obstacleYPositions, gridResolution, robotRadius, show_animation):
       """
       Initialize map for a star planning
 
@@ -16,8 +14,9 @@ class DijkstraPathPlanning:
       """
       self.gridResolution = gridResolution
       self.robotRadius    = robotRadius
-      self.calc_obstacle_map(obstacleXPositions, obstacleYPositions)
-      self.motion = self.get_motion_model()
+      self.showAnimation  = show_animation
+      self.calculateObstacleMap(obstacleXPositions, obstacleYPositions)
+      self.motion         = self.getMotionsAndCost()
 
     """
     Inner class to represent a node in the grid
@@ -34,43 +33,18 @@ class DijkstraPathPlanning:
 
 
     """
-    Calculate the final path, we will return it backwards from the goal to the start
-    """
-    def calc_final_path(self, goalNode, alreadyVisitedNodeDict):
-      # generate final course, return array of x and y positions
-      xPositionsGoalToStart, yPositionsGoalToStart = [self.calc_position(goalNode.x, self.minx)], [self.calc_position(goalNode.y, self.miny)]
-      priIndex = goalNode.priorIndex
-      while priIndex != -1:
-        theNode = alreadyVisitedNodeDict[priIndex]
-        xPositionsGoalToStart.append(self.calc_position(theNode.x, self.minx))
-        yPositionsGoalToStart.append(self.calc_position(theNode.y, self.miny))
-        priIndex = theNode.priorIndex
-
-      return xPositionsGoalToStart, yPositionsGoalToStart
-
-
-    """
-    Calculate the heuristic... it's basically the hypotenuse
-    """
-    def calc_heuristic(self, node1, node2):
-      weight = 1.0  # weight of heuristic
-      heuristicValue = weight * math.sqrt((node1.x - node2.x)**2 + (node1.y - node2.y)**2)
-      return heuristicValue
-
-
-    """
     This takes a given node and translates it's x and y values into a single index position, it's used to get
     the index of the dictionary item for visitied/unvisited nodes... this basically translates a two dimensional
     array into a long one dimesional one
     """
-    def calc_index(self, node):
+    def calculateNodeIndex(self, node):
         return (node.y - self.miny) * self.xwidth + (node.x - self.minx)
 
 
     """
     Calculate the obstacle map
     """
-    def calc_obstacle_map(self, obstacleXPositions, obstacleYPositions):
+    def calculateObstacleMap(self, obstacleXPositions, obstacleYPositions):
       self.minx = round(min(obstacleXPositions))
       self.miny = round(min(obstacleYPositions))
       self.maxx = round(max(obstacleXPositions))
@@ -85,9 +59,9 @@ class DijkstraPathPlanning:
       self.obmap = [[False for i in range(self.ywidth)]
                     for i in range(self.xwidth)]
       for ix in range(self.xwidth):
-        x = self.calc_position(ix, self.minx)
+        x = self.calculatePosition(ix, self.minx)
         for iy in range(self.ywidth):
-          y = self.calc_position(iy, self.miny)
+          y = self.calculatePosition(iy, self.miny)
           for iobstacleXPositions, iobstacleYPositions in zip(obstacleXPositions, obstacleYPositions):
             d = math.sqrt((iobstacleXPositions - x)**2 + (iobstacleYPositions - y)**2)
             if d <= self.robotRadius:
@@ -98,7 +72,7 @@ class DijkstraPathPlanning:
     """
     Calculate the position... it's (indexPosition * gridResolution) + minPositionValue
     """
-    def calc_position(self, index, minp):
+    def calculatePosition(self, index, minp):
       pos = index*self.gridResolution+minp
       return pos
 
@@ -107,7 +81,7 @@ class DijkstraPathPlanning:
     This calculates the xyindex position for the arguments passed in... it basically maps the world position
     to the grid position... logic used is (axisValue - minAxisValue)/gridResolution
     """
-    def calc_xyindex(self, position, minp):
+    def calculateXYindex(self, position, minp):
       return round((position - minp)/self.gridResolution)
 
 
@@ -118,7 +92,7 @@ class DijkstraPathPlanning:
           cost is 1, when moving both then it's sqrt(xDelta**2 + yDelta**2), since
           ?Delta**2 is 1 it's the sqrt(1+1) or sqrt(2).
     """
-    def get_motion_model(self):
+    def getMotionsAndCost(self):
       motion = [[1, 0, 1],              # x+1, y,   cost=1
                 [0, 1, 1],              # x,   y+1, cost=1
                 [-1, 0, 1],             # x-1. y,   cost=1
@@ -130,7 +104,23 @@ class DijkstraPathPlanning:
 
       return motion
 
+    
+    """
+    Calculate the final path, we will return it backwards from the goal to the start
+    """
+    def getFinalPath(self, goalNode, alreadyVisitedNodeDict):
+      # generate final course, return array of x and y positions
+      xPositionsGoalToStart, yPositionsGoalToStart = [self.calculatePosition(goalNode.x, self.minx)], [self.calculatePosition(goalNode.y, self.miny)]
+      priIndex = goalNode.priorIndex
+      while priIndex != -1:
+        theNode = alreadyVisitedNodeDict[priIndex]
+        xPositionsGoalToStart.append(self.calculatePosition(theNode.x, self.minx))
+        yPositionsGoalToStart.append(self.calculatePosition(theNode.y, self.miny))
+        priIndex = theNode.priorIndex
 
+      return xPositionsGoalToStart, yPositionsGoalToStart
+
+    
     """
     Returns all the nodes to get from the starting position to a goal position, if there isn't a
     path then empty array's are returned.  This uses dijkstra path alogorith.
@@ -140,12 +130,12 @@ class DijkstraPathPlanning:
     """
     def getPath(self, startingXPosition, startingYPosition, goalXPosition, goalYPosition):
       # Define the start and goal nodes
-      startNode = self.Node(self.calc_xyindex(startingXPosition, self.minx), 
-                            self.calc_xyindex(startingYPosition, self.miny), 
+      startNode = self.Node(self.calculateXYindex(startingXPosition, self.minx), 
+                            self.calculateXYindex(startingYPosition, self.miny), 
                             0.0, 
                             -1)
-      goalNode = self.Node(self.calc_xyindex(goalXPosition, self.minx), 
-                            self.calc_xyindex(goalYPosition, self.miny), 
+      goalNode = self.Node(self.calculateXYindex(goalXPosition, self.minx), 
+                            self.calculateXYindex(goalYPosition, self.miny), 
                             0.0, 
                             -1)
 
@@ -153,7 +143,7 @@ class DijkstraPathPlanning:
       # is the index position
       unvisitedNodeDict, alreadyVisitedNodeDict = dict(), dict()
       # Add the starting node to the list of unvisited nodes
-      unvisitedNodeDict[self.calc_index(startNode)] = startNode
+      unvisitedNodeDict[self.calculateNodeIndex(startNode)] = startNode
 
       # Loop till done (or no solution)... note the no solution condition is when there are no
       # more nodes in unvisitedNodeDict
@@ -169,9 +159,9 @@ class DijkstraPathPlanning:
         current = unvisitedNodeDict[c_id]
 
         # show graph
-        if show_animation:  # pragma: no cover
-          plt.plot(self.calc_position(current.x, self.minx),
-                    self.calc_position(current.y, self.miny), "xc")
+        if self.showAnimation:  # pragma: no cover
+          plt.plot(self.calculatePosition(current.x, self.minx),
+                    self.calculatePosition(current.y, self.miny), "xc")
           if len(alreadyVisitedNodeDict.keys()) % 10 == 0:
             plt.pause(0.001)
 
@@ -195,13 +185,13 @@ class DijkstraPathPlanning:
                                     current.y + self.motion[i][1],
                                     current.cost + self.motion[i][2], 
                                     c_id)
-          adjacentNodeIndex = self.calc_index(adjacentNode)
+          adjacentNodeIndex = self.calculateNodeIndex(adjacentNode)
 
           # Already visited so skip to next one
           if adjacentNodeIndex in alreadyVisitedNodeDict:
             continue
 
-          if not self.verify_node(adjacentNode):
+          if not self.isGoodNode(adjacentNode):
             continue
 
           # Not in list of open nodes then add it
@@ -213,17 +203,28 @@ class DijkstraPathPlanning:
               unvisitedNodeDict[adjacentNodeIndex] = adjacentNode
 
       # Return array's with the x and y positions to get from goal back to start (yes we give it reverse)
-      rx, ry = self.calc_final_path(goalNode, alreadyVisitedNodeDict)
+      rx, ry = self.getFinalPath(goalNode, alreadyVisitedNodeDict)
 
       return rx, ry
 
+    
+    """
+    Little helper to return the slope between two points
+    """
+    def getSlope(self, x1, y1, x2, y2):
+      dx = x2-x1
+      if dx != 0:
+        return ((y2-y1)/dx)
+      else:
+        return "INF"
 
+    
     """
-    Verify that the node is good
+    Verify that the node is good; it's position has to be within min/max and not on an obstacle
     """
-    def verify_node(self, node):
-      px = self.calc_position(node.x, self.minx)
-      py = self.calc_position(node.y, self.miny)
+    def isGoodNode(self, node):
+      px = self.calculatePosition(node.x, self.minx)
+      py = self.calculatePosition(node.y, self.miny)
 
       if px < self.minx:
         return False
@@ -238,3 +239,46 @@ class DijkstraPathPlanning:
         return False
 
       return True
+
+
+    """
+    This takes the points in the arrays which are a bunch of points and creates arrays with the points representing the line segments... i.e.
+    where the slope between the points are the same... i.e. 1,1 2,2 3,3 4,4 5,4 is translated to 1,1 4,4 5,4 (slope between first 4 points
+    are the same, it changed with the last point).
+    NOTE: We do it in reverse order because it has fro the goal to the start and we want the other way around
+    """
+    def mergePointsWithSameSlope(self, arrayX, arrayY):
+      newXArray = []
+      newYArray = []
+      
+      firstPass = True
+      idx       = len(arrayX) -1
+      baseIdx   = idx
+      while (idx >= 0):
+      #for idx in range(len(arrayX)):
+        if baseIdx != idx:  # we're not pointing to ourselves (only on first rec)   
+          currSlope = self.getSlope(arrayX[baseIdx],arrayY[baseIdx],arrayX[idx],arrayY[idx])
+          if firstPass:
+            # On first pass we want to set the 'lastSlope' correctly
+            lastSlope = currSlope
+            firstPass = False
+
+          if currSlope != lastSlope:
+            # Slope changed append the prior record and set the base to be that prior record
+            newXArray.append(arrayX[idx+1])
+            newYArray.append(arrayY[idx+1])
+            baseIdx   = idx+1
+            lastSlope = self.getSlope(arrayX[baseIdx],arrayY[baseIdx],arrayX[idx],arrayY[idx])
+        else:
+          # Only true on the first iteration so add that record
+          newXArray.append(arrayX[baseIdx])
+          newYArray.append(arrayY[baseIdx])
+
+        idx -= 1
+      
+      if (len(arrayX) > 1):
+        # We need to write out the last record (if we have more than one record in the array)
+        newXArray.append(arrayX[0])
+        newYArray.append(arrayY[0])
+
+      return newXArray, newYArray

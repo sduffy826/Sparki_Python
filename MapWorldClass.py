@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import image, transforms
 from collections import deque
 
 EXTENDGRIDAREABY = 6  # Number of grid points to exted by (like a margin)
@@ -39,7 +40,7 @@ class MapWorld:
     self.np_endYPosArray = (np.sin(self.np_radiansArray) * self.np_distancesArray) + self.np_startYPosArray
     
     if DEBUGIT:  # Sample some output
-      for i in range(2,4):
+      for i in range(len(self.np_startXPosArray)):
         print("Starting point ({0:.2f},{1:.2f}) angle: {2} distance: {3:.2f}".format(self.np_startXPosArray[i],
                                                                                      self.np_startYPosArray[i],
                                                                                      self.np_anglesArray[i],
@@ -65,32 +66,46 @@ class MapWorld:
 
   def plotMaps(self, lineMap = True, pointMap = True):
     # Get the number of rows and columns in the point array
-    xyres = np.array(self.np_pointMap).shape
+    outMap = self.np_pointMap.T # Transpose the array so values appear correct (otherwise x are on vertical axis)
+    xyres = np.array(outMap).shape
     plt.figure(1, figsize=(12,5))               # figsize is in inches
-    plt.subplot(121)
-    # Below we show all the points in the map (imshow is image show)
-    plt.imshow(self.np_pointMap, cmap="bone_r") # cmap = "binary" "PiYG_r" "bone" "bone_r" "RdYlGn_r"
-    plt.clim(-0.4, 1.4)
-    plt.gca().set_xticks(np.arange(-.5, xyres[1], 1), minor=True)
-    plt.gca().set_yticks(np.arange(-.5, xyres[0], 1), minor=True)
-    plt.grid(True, which="minor", color="w", linewidth=0.6, alpha=0.5)
-    plt.colorbar()
+    
+    if pointMap:  # This shows each point, the open points are different color then obstacle
+      plt.subplot(121)
+      # tr = transforms.Affine2D().rotate_deg(270)  // This is to transform an image, didn't work with grid
+      # Below we show all the points in the map (imshow is image show)
+      # plt.imshow(self.np_pointMap, cmap="bone_r", transform=tr) # cmap = "binary" "PiYG_r" "bone" "bone_r" "RdYlGn_r"  // show format of transform
+      # Use imshow to show the matrix, it uses the values (0.0, 0.5 and 1.0) to map to colors, the origin lower puts 0,0 in lower left corner
+      plt.imshow(outMap, cmap="bone_r", origin="lower") # cmap = "binary" "PiYG_r" "bone" "bone_r" "RdYlGn_r"  the .T transposes the array
+      #plt.clim(-0.4, 1.4)  
+      plt.clim(0.0,1.0)
+      plt.gca().set_xticks(np.arange(-.5, xyres[1], 1), minor=True)
+      plt.gca().set_yticks(np.arange(-.5, xyres[0], 1), minor=True)
+      #plt.gca().invert_yaxis()  // Another way to invert the axis... use the parm 
+      plt.grid(True, which="minor", color="w", linewidth=1.0, alpha=0.5)  #color="#c8c9b3"
+      plt.gca().set_title("Grid/Obstacle Map")      
+      plt.colorbar()
+    if lineMap:  # Show the lines that were taken from the sensor
+      plt.subplot(122)
+      # plt.plot([endYPosArray, np.zeros(np.size(endYPosArray))], [endXPosArray, np.zeros(np.size(endXPosArray))], "ro-")
 
-    plt.subplot(122)
-    # plt.plot([endYPosArray, np.zeros(np.size(endYPosArray))], [endXPosArray, np.zeros(np.size(endXPosArray))], "ro-")
-
-    for i in range(len(self.np_startXPosArray)):
-      xArray = [self.np_startXPosArray[i], self.np_endXPosArray[i]]
-      yArray = [self.np_startYPosArray[i], self.np_endYPosArray[i]]
-      plt.plot(xArray, yArray, 'm')
-
-    #plt.plot([np_startXPosArray, endXPosArray], [np_startYPosArray, endYPosArray] , "ro-")
-    plt.axis("equal")
-    plt.plot(0.0, 0.0, "ob")
-    plt.gca().set_aspect("equal", "box")
-    bottom, top = plt.ylim()  # return the current ylim
-    plt.ylim((top, bottom)) # rescale y axis, to match the grid orientation
-    plt.grid(True)
+      for i in range(len(self.np_startXPosArray)):
+        xArray = [self.np_startXPosArray[i], self.np_endXPosArray[i]]
+        yArray = [self.np_startYPosArray[i], self.np_endYPosArray[i]]
+        #plt.plot(xArray, yArray, 'm')
+        plt.plot(xArray,yArray,color="green",linewidth=1,marker='o',markersize=1)
+        plt.scatter(self.np_endXPosArray[i],self.np_endYPosArray[i],marker='o',c='red')
+        
+      #plt.plot([np_startXPosArray, endXPosArray], [np_startYPosArray, endYPosArray] , "ro-")
+      plt.axis("equal")
+      plt.plot(0.0, 0.0, "ob")
+      plt.gca().set_aspect("equal", "box")
+      plt.gca().invert_yaxis()
+      bottom, top = plt.ylim()  # return the current ylim
+      plt.ylim((top, bottom)) # rescale y axis, to match the grid orientation
+      plt.grid(True)
+      plt.gca().set_title("Sensor Readings")
+    
     plt.show()
 
 
@@ -119,13 +134,23 @@ class MapWorld:
 
       # Get all the points that make up the line from (x1,y1)->(x2,y2)
       pointsOnLine = self.returnAllPointsBetweenTwoPoints(x1, y1, x2, y2)
+      if DEBUGIT:
+        print("Points from ({0},{1})->({2}.{3})".format(x1,y1,x2,y2))
+        tempString="  "
+        for aPoint in pointsOnLine:
+          tempString += " ({0},{1})".format(aPoint[0],aPoint[1])
+          if len(tempString) > 120:
+            print(tempString)
+            tempString = "  "
+        print(tempString)
 
       # NOTE: You may want to extend the cells marked as cleared by using the helper too :)
       for aPointOnLine in pointsOnLine:
         pointMap[aPointOnLine[0]][aPointOnLine[1]] = 0.0  # Mark this point as free
       # Mark the ending points as 1.0 (we extend it a little 2 cells either side), the
       # routine below is a little helper to do that
-      self.fillGridMapHelper(pointMap, aPointOnLine[0], aPointOnLine[1], -1, 1, 1.0)
+      # self.fillGridMapHelper(pointMap, aPointOnLine[0], aPointOnLine[1], -1, 1, 1.0)
+      self.fillGridMapHelper(pointMap, aPointOnLine[0], aPointOnLine[1], 0, 0, 1.0)
     return pointMap, minX, minY, maxX, maxY
 
 
