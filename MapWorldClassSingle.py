@@ -68,19 +68,15 @@ class MapWorld:
     # Get the number of rows and columns in the point array
     outMap = self.np_pointMap.T # Transpose the array so values appear correct (otherwise x are on vertical axis)
     xyres = np.array(outMap).shape
-    #plt.figure(1, figsize=(12,5))               # figsize is in inches
     if lineMap and pointMap:
       plt.figure(1, figsize=(12,5))               # figsize is in inches
       print("two")
-      pointPlot = 121
-      linePlot = 122
     else:
-      plt.figure(1, figsize=(8,8))
-      pointPlot = linePlot = 111
+      plt.figure(1, figsize=(6,5))
       print("one")
-  
+    
     if pointMap:  # This shows each point, the open points are different color then obstacle
-      plt.subplot(pointPlot)
+      plt.subplot(121)
       # tr = transforms.Affine2D().rotate_deg(270)  // This is to transform an image, didn't work with grid
       # Below we show all the points in the map (imshow is image show)
       # plt.imshow(self.np_pointMap, cmap="bone_r", transform=tr) # cmap = "binary" "PiYG_r" "bone" "bone_r" "RdYlGn_r"  // show format of transform
@@ -95,7 +91,7 @@ class MapWorld:
       plt.gca().set_title("Grid/Obstacle Map")      
       plt.colorbar()
     if lineMap:  # Show the lines that were taken from the sensor
-      plt.subplot(linePlot)
+      plt.subplot(122)
       # plt.plot([endYPosArray, np.zeros(np.size(endYPosArray))], [endXPosArray, np.zeros(np.size(endXPosArray))], "ro-")
 
       for i in range(len(self.np_startXPosArray)):
