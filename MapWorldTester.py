@@ -16,7 +16,7 @@ def main():
 
   mapperObj = MapWorldClass.MapWorld((1.0/gridPointsPerXYValue))
   mapperObj.generateMap(fileWithPointsAnglesDistances)
-  mapperObj.plotMaps(True,False)
+  mapperObj.plotMaps(True,True)
 
         
 if __name__ == '__main__':
