@@ -12,7 +12,7 @@ Mainline
 def main():
   print(__file__, "start")
   gridPointsPerXYValue = 1.0
-  fileWithPointsAnglesDistances = "xPosYPosAngleDistance.csv"
+  fileWithPointsAnglesDistances = "obstacleReadings.csv" #"xPosYPosAngleDistance.csv"
 
   mapperObj = MapWorldClass.MapWorld((1.0/gridPointsPerXYValue))
   mapperObj.generateMap(fileWithPointsAnglesDistances)

@@ -4,7 +4,7 @@ from datetime import datetime
 import sparkiStats
 
 useBluetooth = False
-isIBMMacBook = True
+isIBMMacBook = False
 
 outputFile   = "obstacleReadings.csv"
 
@@ -41,6 +41,7 @@ def processObstacle(insFromSparki):
 while ((currTime) < runTime) and (leaveLoop == False):
   try:
     stringFromSparki = ser.readline().decode('ascii').strip()  
+    print("From sparki: {0}".format(stringFromSparki))
     if stringFromSparki == "DONE":
       leaveLoop = True
     else:
